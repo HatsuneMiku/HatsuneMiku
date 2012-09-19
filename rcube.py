@@ -66,7 +66,7 @@ class MainWindow(window.Window):
     self.instbkwidth, self.instbkheight = 480, 400
     bmplen = (self.instbkwidth / 8) * self.instbkheight
     self.instbkbmp = (ctypes.c_ubyte * bmplen)(*([255] * bmplen))
-    self.ticktimer, self.tick, self.insttimer, self.inst = 0.1, 0.0, 30, 1
+    self.ticktimer, self.tick, self.insttimer, self.inst = 0.5, 0.0, 30, 1
     self.printing, self.solver = 1, deque()
     self.stat = [None, 0, Queue.Queue(512)] # (key(1-9), direc), count, queue
     self.cmax, self.tanim = 18, [6, 3, 1, 3] # frames in rotate moving, speeds
@@ -259,8 +259,9 @@ class MainWindow(window.Window):
       GL_RGBA, GL_UNSIGNED_BYTE, d)
     if mode == 0: # 40-60 fps (fast) but 22-34 fps (6 chars)
       buf = map(chr, col) * (w * h)
+      # self.DrawBlendStringOnBuffer(buf, (w, h), (60, 30), 'NiPpOn')
       s = ('NiPpOn', (60,30), ((0,1), (10,0), (20,1), (32,0), (46,1), (58,0)))
-      for i, c in enumerate(s[0]): self.DrawBlendStringOnBuffer(buf, (w, h),
+      for i, c in enumerate(s[0]): self.DrawBlendCharOnBuffer(buf, (w, h),
         (s[1][0] + s[2][i][0], s[1][1] + s[2][i][1]), c)
       t = time.time()
       fmt = '%H:%M:%S' if t - int(t) < .5 else '%H %M %S'
@@ -351,8 +352,14 @@ class MainWindow(window.Window):
     for y in xrange(h):
       for x in xrange(w):
         q = ((b0 + y) * ix + (l0 + x)) * len('RGBA')
-        sr, sg, sb, sa = [ord(c) for c in d[q:q+len('RGBA')]]
         p = ((pos[1] + y) * bw + (pos[0] + x)) * len('RGBA')
+        if False: # 53-54 fps
+          srgba = [ord(c) for c in d[q:q+len('RGBA')]]
+          drgba = [ord(c) for c in buf[p:p+len('RGBA')]]
+          rgba = [_(srgba[i], drgba[i], srgba[3]) for i in xrange(len('RGBA'))]
+          buf[p:p+len('RGBA')] = map(chr, rgba)
+        # 57-60 fps
+        sr, sg, sb, sa = [ord(c) for c in d[q:q+len('RGBA')]]
         dr, dg, db, da = [ord(c) for c in buf[p:p+len('RGBA')]]
         r, g, b, a = _(sr, dr, sa), _(sg, dg, sa), _(sb, db, sa), _(sa, da, sa)
         buf[p:p+len('RGBA')] = map(chr, (r, g, b, a))
@@ -494,7 +501,7 @@ class MainWindow(window.Window):
     if self.inst > self.insttimer: self.inst = 0
     self.tick += dt
     if self.tick >= self.ticktimer: self.tick = 0.0
-    if self.tick <= 0.0: self.ModifyTexture(0)
+    if not self.mapping and self.tick <= 0.0: self.ModifyTexture(0)
     self.ReplaceVtex()
 
   def on_resize(self, width, height):
@@ -515,25 +522,26 @@ class MainWindow(window.Window):
   def on_key_press(self, symbol, modifiers):
     direc = -1 if self.keys[window.key.LSHIFT] else 1
     if self.chcmp(symbol, 'Ii'): self.inst = 0 if self.inst > 0 else 1
-    if self.chcmp(symbol, 'XYZxyz'):
+    elif self.chcmp(symbol, 'XYZxyz'):
       c = symbol - (ord('X') if symbol <= ord('Z') else ord('x'))
       self.keyxyz[c] = 0 if self.keyxyz[c] else -direc
-    if symbol == window.key.UP: self.keyxyz[0] = 1.5 + direc
-    if symbol == window.key.DOWN: self.keyxyz[0] = -(1.5 + direc)
-    if symbol == window.key.LEFT: self.keyxyz[1] = 1.5 + direc
-    if symbol == window.key.RIGHT: self.keyxyz[1] = -(1.5 + direc)
-    if symbol == ord('0'): self.InitRot()
-    if self.chcmp(symbol, '123456789'): self.move(symbol - ord('0'), -direc)
-    if self.chcmp(symbol, 'Aa'): self.tanim = self.tanim[1:] + self.tanim[:1]
-    if self.chcmp(symbol, 'Bb'): self.blend = 1 - self.blend
-    if self.chcmp(symbol, 'Mm'): self.mapping = 1 - self.mapping
-    if self.chcmp(symbol, 'Pp'): self.printing = 1 - self.printing
-    if symbol == window.key.PAGEUP: self.zoom = 0 if self.zoom < 0 else 1
-    if symbol == window.key.PAGEDOWN: self.zoom = 0 if self.zoom > 0 else -1
-    if symbol == window.key.F3: self.expand = 1 - self.expand
-    if symbol == window.key.F4: self.shuffle()
-    if symbol == window.key.F5: self.solve()
-    if symbol == window.key.ESCAPE: self.dispatch_event('on_close')
+    elif symbol == window.key.UP: self.keyxyz[0] = 1.5 + direc
+    elif symbol == window.key.DOWN: self.keyxyz[0] = -(1.5 + direc)
+    elif symbol == window.key.LEFT: self.keyxyz[1] = 1.5 + direc
+    elif symbol == window.key.RIGHT: self.keyxyz[1] = -(1.5 + direc)
+    elif symbol == ord('0'): self.InitRot()
+    elif self.chcmp(symbol, '123456789'): self.move(symbol - ord('0'), -direc)
+    elif self.chcmp(symbol, 'Aa'): self.tanim = self.tanim[1:] + self.tanim[:1]
+    elif self.chcmp(symbol, 'Bb'): self.blend = 1 - self.blend
+    elif self.chcmp(symbol, 'Mm'): self.mapping = 1 - self.mapping
+    elif self.chcmp(symbol, 'Pp'): self.printing = 1 - self.printing
+    elif symbol == window.key.PAGEUP: self.zoom = 0 if self.zoom < 0 else 1
+    elif symbol == window.key.PAGEDOWN: self.zoom = 0 if self.zoom > 0 else -1
+    elif symbol == window.key.F3: self.expand = 1 - self.expand
+    elif symbol == window.key.F4: self.shuffle()
+    elif symbol == window.key.F5: self.solve()
+    elif symbol == window.key.ESCAPE: self.dispatch_event('on_close')
+    else: pass
 
   def chcmp(self, symbol, chs):
     for ch in chs:
