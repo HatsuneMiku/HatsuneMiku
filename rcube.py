@@ -331,7 +331,13 @@ class MainWindow(window.Window):
       axis = len(self.ary_norm) - (i + 1) * 2
       u = self.RotVtexReal(c, s, axis, u)
       v = [self.RotVtexReal(c, s, axis, v[j]) for j in xrange(4)]
-    self.DrawTextureQuad(None, v, len(self.ary_norm) * 2, sfact, dfact)
+    if True: # 33-34 fps
+      self.DrawTextureQuad(None, v, len(self.ary_norm) * 2, sfact, dfact)
+    else: # 33-34 fps
+      glColor4f(*self.instbgc)
+      glBegin(GL_POLYGON)
+      for j in xrange(4): glVertex3f(*v[j])
+      glEnd()
     return u
 
   def DrawBlendCharOnVertex3f(self, ary_v3f, c='@', num=0, w=16, h=16):
