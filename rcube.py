@@ -30,6 +30,7 @@ TEXIMG_FACE, TEXIMG_HINT = 'f%d.bmp', '72dpi.bmp'
 TEXIMG_CHAR = ['72dpi_ascii_reigasou_16x16.bmp']
 FONT_FACE, FONT_FILE = u'みかちゃん-P'.encode('cp932'), 'mikaP.ttf'
 
+INST_SHOW = u'i: to show instructions'
 INSTRUCTIONS = u'''Instructions
 i: these instructions on/off (auto off after %5.2f seconds)
 z/y/x: rotate the cube clockwise (on/off toggle)
@@ -422,7 +423,9 @@ class MainWindow(window.Window):
     glEnable(GL_TEXTURE_2D)
 
   def DrawInstructions(self):
-    if not self.inst: return
+    if not self.inst:
+      self.DrawStringToScreen((10.0, 10.0), INST_SHOW)
+      return
     if self.loading <= len(self.ary_norm) * 2: return
     glDisable(GL_TEXTURE_2D)
     f10, f18 = GLUT_BITMAP_HELVETICA_10, GLUT_BITMAP_HELVETICA_18
