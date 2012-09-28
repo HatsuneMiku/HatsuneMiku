@@ -27,8 +27,8 @@ from OpenGL.GLUT import GLUT_BITMAP_TIMES_ROMAN_10, GLUT_BITMAP_TIMES_ROMAN_24
 FLAG_DEBUG = False
 SHUFFLE_COUNT = 50
 RESOURCE_PATH = 'resource'
-TEXIMG_FACE, TEXIMG_HINT = 'f%d.bmp', '72dpi.bmp'
-TEXIMG_CHAR = ['72dpi_ascii_reigasou_16x16.bmp']
+TEXIMG_FACE, TEXIMG_HINT = 'f%d.png', '72dpi.png'
+TEXIMG_CHAR = ['72dpi_ascii_reigasou_16x16.png']
 FONT_FACE, FONT_FILE = u'みかちゃん-P'.encode('cp932'), 'mikaP.ttf'
 
 INST_SHOW = u'i: to show instructions'
