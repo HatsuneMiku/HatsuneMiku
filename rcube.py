@@ -26,6 +26,7 @@ from OpenGL.GLUT import GLUT_BITMAP_TIMES_ROMAN_10, GLUT_BITMAP_TIMES_ROMAN_24
 
 FLAG_DEBUG = False
 SHUFFLE_COUNT = 50
+RESOURCE_PATH = 'resource'
 TEXIMG_FACE, TEXIMG_HINT = 'f%d.bmp', '72dpi.bmp'
 TEXIMG_CHAR = ['72dpi_ascii_reigasou_16x16.bmp']
 FONT_FACE, FONT_FILE = u'みかちゃん-P'.encode('cp932'), 'mikaP.ttf'
@@ -81,7 +82,7 @@ class MainWindow(window.Window):
     self.InitGL(self.width, self.height)
     self.textures = [None] * (len(self.ary_norm) * 2 + 1 + len(TEXIMG_CHAR))
     self.loading, self.dat = 0, [('', 0, 0)] * len(self.textures)
-    font.add_file(FONT_FILE)
+    font.add_file('%s/%s' % (RESOURCE_PATH, FONT_FILE))
     self.font = font.load(FONT_FACE, 20)
     self.fontcolor = (0.5, 0.8, 0.5, 0.9)
     self.fps_display = clock.ClockDisplay(font=self.font, color=self.fontcolor)
@@ -211,7 +212,7 @@ class MainWindow(window.Window):
       if i < len(self.ary_norm): imgfile = TEXIMG_FACE % i # bmp24 256x256
       elif i <= len(self.ary_norm) * 2: imgfile = TEXIMG_HINT
       else: imgfile = TEXIMG_CHAR[i - len(self.ary_norm) * 2 - 1]
-      img = image.load(imgfile)
+      img = image.load('%s/%s' % (RESOURCE_PATH, imgfile))
       self.textures[i] = img.get_texture()
       ix, iy = img.width, img.height
       rawimage = img.get_image_data()
@@ -578,5 +579,7 @@ class MainWindow(window.Window):
       else: self.stat[2].put(self.solver.pop())
 
 if __name__ == '__main__':
+  # pyglet.resource.path = [RESOURCE_PATH]
+  # pyglet.resource.reindex()
   w = MainWindow(caption='rcube', fullscreen=False, resizable=True)
   pyglet.app.run()
