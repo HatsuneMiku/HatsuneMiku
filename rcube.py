@@ -17,7 +17,7 @@ import random
 import time
 import ctypes
 import pyglet
-from pyglet import clock, font, image, media, window
+from pyglet import clock, font, image, media, resource, window
 from pyglet.gl import *
 from OpenGL.GLUT import glutBitmapCharacter, GLUT_BITMAP_HELVETICA_10
 from OpenGL.GLUT import GLUT_BITMAP_HELVETICA_12, GLUT_BITMAP_HELVETICA_18
@@ -26,6 +26,7 @@ from OpenGL.GLUT import GLUT_BITMAP_TIMES_ROMAN_10, GLUT_BITMAP_TIMES_ROMAN_24
 
 FLAG_DEBUG = False
 SHUFFLE_COUNT = 50
+APP_TITLE = 'rcube'
 RESOURCE_PATH = 'resource'
 TEXIMG_FACE, TEXIMG_HINT = 'f%d.png', '72dpi.png'
 TEXIMG_CHAR = ['72dpi_ascii_reigasou_16x16.png']
@@ -82,7 +83,7 @@ class MainWindow(window.Window):
     self.InitGL(self.width, self.height)
     self.textures = [None] * (len(self.ary_norm) * 2 + 1 + len(TEXIMG_CHAR))
     self.loading, self.dat = 0, [('', 0, 0)] * len(self.textures)
-    font.add_file('%s/%s' % (RESOURCE_PATH, FONT_FILE))
+    resource.add_font(FONT_FILE)
     self.font = font.load(FONT_FACE, 20)
     self.fontcolor = (0.5, 0.8, 0.5, 0.9)
     self.fps_display = clock.ClockDisplay(font=self.font, color=self.fontcolor)
@@ -212,19 +213,32 @@ class MainWindow(window.Window):
       if i < len(self.ary_norm): imgfile = TEXIMG_FACE % i # bmp24 256x256
       elif i <= len(self.ary_norm) * 2: imgfile = TEXIMG_HINT
       else: imgfile = TEXIMG_CHAR[i - len(self.ary_norm) * 2 - 1]
-      img = image.load('%s/%s' % (RESOURCE_PATH, imgfile))
+      # * (bug in fast code)
+      # Both resource.texture and resource.image are faster than image.load.
+      # When 'dat = img.get_image_data().get_data()',
+      # img.load returns a str, but resource.* returns a list of int.
+      # So convert dat to str by ''.join(map(chr, dat)), it is very slow way.
+      # Must be skip ''.join(map(chr, dat)) and it = iter() uses int directory,
+      # and change r, g, b, a = [ord(it.next()) ... to [it.next() ...
+      # with fix handling type of ModifyTexture and DrawBlendCharOnBuffer.
+      # img = resource.texture(imgfile)
+      # img = resource.image(imgfile, flip_x=False, flip_y=False, rotate=0)
+      img = image.load(imgfile, file=resource.file(imgfile, mode='rb'))
       self.textures[i] = img.get_texture()
       ix, iy = img.width, img.height
       rawimage = img.get_image_data()
       formatstr = 'RGBA'
       pitch = rawimage.width * len(formatstr)
       dat = rawimage.get_data(formatstr, pitch)
+      if isinstance(dat[0], int): dat = ''.join(map(chr, dat)) # slow *
       self.dat[i] = (dat, ix, iy)
       if i > len(self.ary_norm): # skip face(0-5) and hint(6:white)
         j = i - len(self.ary_norm)
         d = []
+        # it = iter(dat if isinstance(dat[0], int) else map(ord, dat)) # fast *
         it = iter(dat)
         while it.__length_hint__():
+          # r, g, b, a = [it.next() for k in xrange(4)] # fast *
           r, g, b, a = [ord(it.next()) for k in xrange(4)]
           if i < len(self.ary_norm) * 2 and r >= 128 and g >= 128 and b >= 128:
             r, g, b = r if j & 1 else 0, g if j & 2 else 0, b if j & 4 else 0
@@ -579,7 +593,7 @@ class MainWindow(window.Window):
       else: self.stat[2].put(self.solver.pop())
 
 if __name__ == '__main__':
-  # pyglet.resource.path = [RESOURCE_PATH]
-  # pyglet.resource.reindex()
-  w = MainWindow(caption='rcube', fullscreen=False, resizable=True)
+  resource.path = [RESOURCE_PATH]
+  resource.reindex()
+  w = MainWindow(caption=APP_TITLE, fullscreen=False, resizable=True)
   pyglet.app.run()
