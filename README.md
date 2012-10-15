@@ -9,6 +9,12 @@ Links
  * http://HatsuneMiku.github.com/HatsuneMiku/ (web)
  * https://github.com/HatsuneMiku/HatsuneMiku/ (here)
 
+Relations
+---------
+
+ * http://HatsuneMiku.github.com/cube/ (web)
+ * https://github.com/HatsuneMiku/cube/ (git repository)
+
 Requires
 --------
 
